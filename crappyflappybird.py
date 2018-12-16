@@ -66,6 +66,7 @@ while running:
         birdy = 7
     if birdy + 7 >= winy:
         birdx, birdy = 50, 175
+        score = 0
     if birdx + 7 >= winx: #end
         birdx, birdy = 50, 175
         running = False
