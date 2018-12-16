@@ -3,7 +3,7 @@ import random
 import time
 #12/15/2018  
 #just like the classic flappybird game, but shittier -Dylan Andres
-'''SPACEBAR to jump, LCTRL to drop, R to reset'''
+'''press SPACEBAR to jump, hold LCTRL to drop faster, press R to reset'''
 pygame.init()
 
 winx, winy = 1380, 350 #DESKTOP: 1380 // LAPTOP: 1080
@@ -21,6 +21,7 @@ green = (0, 255, 0)
 blue = (0, 191, 255)
 black = (0, 0, 0)
 white = (255, 255, 255)
+red = (255, 0, 0)
 
 #music/sounds
 jumpsound = pygame.mixer.Sound("mario.wav")
@@ -29,29 +30,47 @@ coinsound = pygame.mixer.Sound("coin.wav")
 pygame.mixer.music.load("pkmn.wav")
 pygame.mixer.music.play(-1)
 
+#on-screen text
+def message(text, color, size, x, y):
+    font = pygame.font.SysFont(None, size)
+    screentext = font.render(text, True, color)
+    window.blit(screentext, (x, y))
+
 running = True
 score = 0
 while running:
-    print("X:", birdx, "   ", "Y:", birdy, "   ", "Score:", score) #coord test
     pygame.time.delay(refresh)
     for event in pygame.event.get():
-        if event.type == pygame.KEYDOWN: #keystroke
+    #keystrokes
+        if event.type == pygame.KEYDOWN: 
             if event.key == pygame.K_SPACE:
                 pygame.mixer.Sound.play(jumpsound)
                 birdy = newy - 10
-            if event.key == pygame.K_LCTRL:
-                birdy = newy + 2
             if event.key == ord('r'):
                 birdx, birdy = 50, 175
                 score = 0
         if event.type == pygame.QUIT:
             running = False
 
+    #keyholds
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_LCTRL]:
+        birdy = newy +2
+
     #score counter
     for border in range(115, winx, 100): #middle of each pipe
         if birdx == border or birdx - 1 == border or birdx + 1 == border:
             pygame.mixer.Sound.play(coinsound)
             score += 1
+
+    #text render
+    message("Jump: SPACEBAR", black, 18, 5, 20)
+    message("Drop: HOLD LCTRL", black, 18, 5, 30)
+    message("Reset: R", black, 18, 5, 40)
+    message("Dylan Andres 2018", black, 18, 5, winy - 20)
+    t = "SCORE: " + str(score)
+    message(t, red, 22, 5, 5)
+    print("X:", birdx, "   ", "Y:", birdy, "   ", "Score:", score) #coord test
 
     #bird render
     pygame.draw.circle(window, yellow, (birdx, birdy), 7, 0)
