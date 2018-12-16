@@ -1,19 +1,24 @@
 import pygame
 import random
 import time
+import gc
+
 #12/15/2018  
 #just like the classic flappybird game, but shittier -Dylan Andres
 '''press SPACEBAR to jump, hold LCTRL to drop faster, press R to reset'''
 pygame.init()
 
-winx, winy = 1380, 350 #DESKTOP: 1380 // LAPTOP: 1080
+#window
+winx, winy = 1080, 350
 window = pygame.display.set_mode((winx, winy))
 pygame.display.set_caption("Crappy Flappy Bird")
+refresh = 100
 
-birdx, birdy = 50, 175 #starting position
+#bird attributes
+birdx, birdy = 7, 175 #starting position
 birdxvel = 3 #speed
 birdyvel = -3 #gravity
-refresh = 100
+size = 7
 
 #colors
 yellow = (255, 255, 0)
@@ -36,26 +41,41 @@ def message(text, color, size, x, y):
     screentext = font.render(text, True, color)
     window.blit(screentext, (x, y))
 
-running = True
+#value init
 score = 0
+hiscore = 0
+deaths = 0
+
+#program START
+running = True
 while running:
     pygame.time.delay(refresh)
     for event in pygame.event.get():
-    #keystrokes
+        #key strokes
         if event.type == pygame.KEYDOWN: 
             if event.key == pygame.K_SPACE:
                 pygame.mixer.Sound.play(jumpsound)
                 birdy = newy - 10
             if event.key == ord('r'):
-                birdx, birdy = 50, 175
+                birdx, birdy = 7, 175
                 score = 0
+                hiscore = 0
+                deaths = 0
+        #close window
         if event.type == pygame.QUIT:
+            if score > hiscore:
+                hiscore = score
             running = False
 
-    #keyholds
+    #key holds
     keys = pygame.key.get_pressed()
     if keys[pygame.K_LCTRL]:
         birdy = newy +2
+
+    #dev tool; reposition bird
+    '''if pygame.mouse.get_pressed()[0]:
+        birdx = pygame.mouse.get_pos()[0]
+        birdy = pygame.mouse.get_pos()[1]'''
 
     #score counter
     for border in range(115, winx, 100): #middle of each pipe
@@ -67,28 +87,37 @@ while running:
     message("Jump: SPACEBAR", black, 18, 5, 20)
     message("Drop: HOLD LCTRL", black, 18, 5, 30)
     message("Reset: R", black, 18, 5, 40)
-    message("Dylan Andres 2018", black, 18, 5, winy - 20)
+    message("Dylan Andres 12/15/2018", black, 18, 5, winy - 20)
+    w = "DEATHS: " + str(deaths)
+    message(w, red, 22, 240,5)
+    v = "HIGH-SCORE: " + str(hiscore)
+    message(v, red, 22, 100, 5)
     t = "SCORE: " + str(score)
     message(t, red, 22, 5, 5)
     print("X:", birdx, "   ", "Y:", birdy, "   ", "Score:", score) #coord test
 
     #bird render
-    pygame.draw.circle(window, yellow, (birdx, birdy), 7, 0)
+    pygame.draw.circle(window, yellow, (birdx, birdy), size, 0)
     pygame.display.update()
     window.fill(blue)
+
     #bird physics
     birdx += birdxvel
     birdy -= birdyvel
     newx, newy = birdx, birdy
+
     #bounds
-    if birdy - 7 <= 0:
-        birdy = 7
-    if birdy + 7 >= winy:
-        birdx, birdy = 50, 175
+    if birdy - size <= 0: #too high
+        birdy = size
+    if birdy + size >= winy: #too low; reset
+        birdx, birdy = 7, 175
+        if score > hiscore:
+            hiscore = score
         score = 0
-    if birdx + 7 >= winx: #end
-        birdx, birdy = 50, 175
-        running = False
+        deaths += 1
+    if birdx + size >= winx: #end
+        birdx = 7 #reset to beginning; keep same height
+        
     #pipe render 
     class Pipe:
         def __init__(self, x, y, width, length):
@@ -96,6 +125,7 @@ while running:
             self.y = y
             self.w = width
             self.L= length
+
 #                 x    y  wid len        x    y    wid  len
     p1, p2 = Pipe(100, 0, 30, 100), Pipe(100, 350, 30, -150)
     p3, p4 = Pipe(200, 0, 30, 200), Pipe(200, 350, 30, -100)
@@ -105,11 +135,8 @@ while running:
     p11, p12 = Pipe(600, 0, 30, 100), Pipe(600, 350, 30, -150)
     p13, p14 = Pipe(700, 0, 30, 200), Pipe(700, 350, 30, -100)
     p15, p16 = Pipe(800, 0, 30, 100), Pipe(800, 350, 30, -200)
-    p17, p18 = Pipe(900, 0, 30, 110), Pipe(900, 350, 30, -220)
+    p17, p18 = Pipe(900, 0, 30, 100), Pipe(900, 350, 30, -220)
     p19, p20 = Pipe(1000, 0, 30, 20), Pipe(1000, 350, 30, -300)
-    p21, p22 = Pipe(1100, 0, 30, 100), Pipe(1100, 350, 30, -150)
-    p23, p24 = Pipe(1200, 0, 30, 200), Pipe(1200, 350, 30, -100)
-    p25, p26 = Pipe(1300, 0, 30, 100), Pipe(1300, 350, 30, -200)
     pygame.draw.rect(window, green, (p1.x, p1.y, p1.w, p1.L), 0)
     pygame.draw.rect(window, green, (p2.x, p2.y, p2.w, p2.L), 0)
     pygame.draw.rect(window, green, (p3.x, p3.y, p3.w, p3.L), 0)
@@ -130,13 +157,129 @@ while running:
     pygame.draw.rect(window, green, (p18.x, p18.y, p18.w, p18.L), 0)
     pygame.draw.rect(window, green, (p19.x, p19.y, p19.w, p19.L), 0)
     pygame.draw.rect(window, green, (p20.x, p20.y, p20.w, p20.L), 0)
-    pygame.draw.rect(window, green, (p21.x, p21.y, p21.w, p21.L), 0)
-    pygame.draw.rect(window, green, (p22.x, p22.y, p22.w, p22.L), 0)
-    pygame.draw.rect(window, green, (p23.x, p23.y, p23.w, p23.L), 0)
-    pygame.draw.rect(window, green, (p24.x, p24.y, p24.w, p24.L), 0)
-    pygame.draw.rect(window, green, (p25.x, p25.y, p25.w, p25.L), 0)
-    pygame.draw.rect(window, green, (p26.x, p26.y, p26.w, p26.L), 0)
 
-
-print("Thanks for playing!")
+    #pipe collision; every 2 if statements is pair of pipes (top/bottom)
+    if birdx + size > p1.x and birdx - size < (p1.x + p1.w) and birdy - size < p1.L:
+        birdx, birdy = 7, 175
+        if score > hiscore:
+            hiscore = score
+        score = 0
+        deaths += 1
+    if birdx + size > p1.x and birdx - size < (p1.x + p1.w) and birdy + size > (p2.y + p2.L):
+        birdx, birdy = 7, 175
+        if score > hiscore:
+            hiscore = score
+        score = 0
+        deaths += 1
+    if birdx + size > p3.x and birdx - size < (p3.x + p3.w) and birdy - size < p3.L:
+        birdx, birdy = 7, 175
+        if score > hiscore:
+            hiscore = score
+        score = 0
+        deaths += 1
+    if birdx + size > p3.x and birdx - size < (p3.x + p3.w) and birdy + size > (p4.y + p4.L):
+        birdx, birdy = 7, 175
+        if score > hiscore:
+            hiscore = score
+        score = 0
+        deaths += 1
+    if birdx + size > p5.x and birdx - size < (p5.x + p5.w) and birdy - size < p5.L:
+        birdx, birdy = 7, 175
+        if score > hiscore:
+            hiscore = score
+        score = 0
+        deaths += 1
+    if birdx + size > p5.x and birdx - size < (p5.x + p5.w) and birdy + size > (p6.y + p6.L):
+        birdx, birdy = 7, 175
+        if score > hiscore:
+            hiscore = score
+        score = 0
+        deaths += 1
+    if birdx + size > p7.x and birdx - size < (p7.x + p7.w) and birdy - size < p7.L:
+        birdx, birdy = 7, 175
+        if score > hiscore:
+            hiscore = score
+        score = 0
+        deaths += 1
+    if birdx + size > p7.x and birdx - size < (p7.x + p7.w) and birdy + size > (p8.y + p8.L):
+        birdx, birdy = 7, 175
+        if score > hiscore:
+            hiscore = score
+        score = 0
+        deaths += 1
+    if birdx + size > p9.x and birdx - size < (p9.x + p9.w) and birdy - size < p9.L:
+        birdx, birdy = 7, 175
+        if score > hiscore:
+            hiscore = score
+        score = 0
+        deaths += 1
+    if birdx + size > p9.x and birdx - size < (p9.x + p9.w) and birdy + size > (p10.y + p10.L):
+        birdx, birdy = 7, 175
+        if score > hiscore:
+            hiscore = score
+        score = 0
+        deaths += 1
+    if birdx + size > p11.x and birdx - size < (p11.x + p11.w) and birdy - size < p11.L:
+        birdx, birdy = 7, 175
+        if score > hiscore:
+            hiscore = score
+        score = 0
+        deaths += 1
+    if birdx + size > p11.x and birdx - size < (p11.x + p11.w) and birdy + size > (p12.y + p12.L):
+        birdx, birdy = 7, 175
+        if score > hiscore:
+            hiscore = score
+        score = 0
+        deaths += 1
+    if birdx + size > p13.x and birdx - size < (p13.x + p13.w) and birdy - size < p13.L:
+        birdx, birdy = 7, 175
+        if score > hiscore:
+            hiscore = score
+        score = 0
+        deaths += 1
+    if birdx + size > p13.x and birdx - size < (p13.x + p13.w) and birdy + size > (p14.y + p14.L):
+        birdx, birdy = 7, 175
+        if score > hiscore:
+            hiscore = score
+        score = 0
+        deaths += 1
+    if birdx + size > p15.x and birdx - size < (p15.x + p15.w) and birdy - size < p15.L:
+        birdx, birdy = 7, 175
+        if score > hiscore:
+            hiscore = score
+        score = 0
+        deaths += 1
+    if birdx + size > p15.x and birdx - size < (p15.x + p15.w) and birdy + size > (p16.y + p16.L):
+        birdx, birdy = 7, 175
+        if score > hiscore:
+            hiscore = score
+        score = 0
+        deaths += 1
+    if birdx + size > p17.x and birdx - size < (p17.x + p17.w) and birdy - size < p17.L:
+        birdx, birdy = 7, 175
+        if score > hiscore:
+            hiscore = score
+        score = 0
+        deaths += 1
+    if birdx + size > p17.x and birdx - size < (p17.x + p17.w) and birdy + size > (p18.y + p18.L):
+        birdx, birdy = 7, 175
+        if score > hiscore:
+            hiscore = score
+        score = 0
+        deaths += 1
+    if birdx + size > p19.x and birdx - size < (p19.x + p19.w) and birdy - size < p19.L:
+        birdx, birdy = 7, 175
+        if score > hiscore:
+            hiscore = score
+        score = 0
+        deaths += 1
+    if birdx + size > p19.x and birdx - size < (p19.x + p19.w) and birdy + size > (p20.y + p20.L):
+        birdx, birdy = 7, 175
+        if score > hiscore:
+            hiscore = score
+        score = 0
+        deaths += 1
+   
+#program END
+print("\nThanks for playing!", "\nYour score was", score, "\nYour high-score was", hiscore, "\nYou died", deaths, "time(s)", "\n")
 pygame.quit()
