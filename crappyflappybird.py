@@ -4,7 +4,7 @@ import time
 import gc
 
 #12/15/2018  
-#just like the classic flappybird game, but shittier -Dylan Andres
+#just like the classic flappybird game, but crappier -Dylan Andres
 '''press SPACEBAR to jump, hold LCTRL to drop faster, press R to reset'''
 pygame.init()
 
